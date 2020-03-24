@@ -23,6 +23,7 @@ lazy val sourcecodeVersion    = "0.1.8"
 lazy val specs2Version        = "4.8.2"
 lazy val scala212Version      = "2.12.10"
 lazy val scala213Version      = "2.13.1"
+lazy val dottyVersion         = "0.23.0-RC1"
 lazy val slf4jVersion         = "1.7.29"
 
 // These are releases to ignore during MiMa checks
@@ -39,11 +40,17 @@ lazy val compilerFlags = Seq(
   scalacOptions in (Compile, doc) --= Seq(
     "-Xfatal-warnings"
   ),
-  libraryDependencies ++= Seq(
-    compilerPlugin("com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full),
-    "com.github.ghik" % "silencer-lib" % silencerVersion % Provided cross CrossVersion.full,
-    "org.scala-lang.modules" %% "scala-collection-compat" % collCompatVersion
-  )
+  libraryDependencies ++= {
+    if (isDotty.value) Seq(
+      compilerPlugin("com.github.ghik" % "silencer-plugin_2.13.1" % silencerVersion),
+      "com.github.ghik" % "silencer-lib_2.13.1" % silencerVersion % Provided
+    )
+    else Seq(
+      compilerPlugin("com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full),
+      "com.github.ghik" % "silencer-lib" % silencerVersion % Provided cross CrossVersion.full,
+      "org.scala-lang.modules" %% "scala-collection-compat" % collCompatVersion
+    )
+  }
 )
 
 lazy val buildSettings = Seq(
@@ -76,7 +83,7 @@ lazy val commonSettings =
       "org.specs2"     %% "specs2-core"       % specs2Version     % "test",
       "org.specs2"     %% "specs2-scalacheck" % specs2Version     % "test"
     ),
-    addCompilerPlugin("org.typelevel" %% "kind-projector" % kindProjectorVersion cross CrossVersion.full),
+    addCompilerPlugin("org.typelevel" % "kind-projector_2.13.1" % kindProjectorVersion),
   )
 
 lazy val publishSettings = Seq(
@@ -94,6 +101,12 @@ lazy val noPublishSettings = Seq(
 )
 
 lazy val doobieSettings = buildSettings ++ commonSettings
+
+lazy val dottySettings = Seq(
+  scalaVersion := dottyVersion,
+  crossScalaVersions += dottyVersion,
+  libraryDependencies := libraryDependencies.value.map(_.withDottyCompat(scalaVersion.value)),
+)
 
 lazy val doobie = project.in(file("."))
   .settings(doobieSettings)
@@ -153,6 +166,7 @@ lazy val free = project
       )
     }
   )
+  .settings(dottySettings)
 
 
 lazy val core = project
