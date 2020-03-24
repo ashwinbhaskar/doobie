@@ -189,6 +189,7 @@ lazy val core = project
     unmanagedSourceDirectories in Compile += {
       val sourceDir = (sourceDirectory in Compile).value
       CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((0, _))            => sourceDir / "dotty"
         case Some((2, n)) if n <= 12 => sourceDir / "scala-2.13-"
         case _                       => sourceDir / "scala-2.13+"
       }
@@ -213,6 +214,7 @@ lazy val core = project
       Seq(outFile)
     }.taskValue
   )
+  .settings(dottySettings)
 
 lazy val example = project
   .in(file("modules/example"))
